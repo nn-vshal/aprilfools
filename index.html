@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Autoverzekering aanvragen – voorbeeld</title>
+
+  <!-- Optional: system font stack to keep it lightweight -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <!-- Top utility bar (optional) -->
+  <div class="topbar" role="banner">
+    <div class="container topbar__inner">
+      <span class="topbar__hint">Particulier</span>
+      <div class="topbar__actions">
+        <a class="link" href="#">Inloggen</a>
+        <a class="link" href="#">Contact</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main header -->
+  <header class="header">
+    <div class="container header__inner">
+      <a class="brand" href="#" aria-label="Home">
+        <span class="brand__mark" aria-hidden="true">Agentic</span>
+        <span class="brand__text">Verzekeren</span>
+      </a>
+
+      <nav class="nav" aria-label="Hoofdnavigatie">
+        <a class="nav__item" href="#">Verzekeren</a>
+        <a class="nav__item" href="#">Schade melden</a>
+        <a class="nav__item" href="#">Service &amp; Contact</a>
+      </nav>
+
+      <div class="header__cta">
+        <a class="btn btn--ghost" href="#">Hulp nodig?</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero / page intro -->
+  <section class="hero">
+    <div class="container hero__inner">
+      <div class="hero__copy">
+        <p class="eyebrow">Autoverzekering</p>
+        <h1>Vraag je autoverzekering aan</h1>
+        <p class="lead">
+          Vul je gegevens in en doorloop de stappen. Je ziet tussendoor een overzicht van je aanvraag.
+        </p>
+
+        <!-- Stepper -->
+        <ol class="stepper" aria-label="Voortgang">
+          <li class="stepper__step is-active">
+            <span class="stepper__dot" aria-hidden="true"></span>
+            <span class="stepper__label">Gegevens</span>
+          </li>
+          <li class="stepper__step">
+            <span class="stepper__dot" aria-hidden="true"></span>
+            <span class="stepper__label">Dekking</span>
+          </li>
+          <li class="stepper__step">
+            <span class="stepper__dot" aria-hidden="true"></span>
+            <span class="stepper__label">Controle</span>
+          </li>
+          <li class="stepper__step">
+            <span class="stepper__dot" aria-hidden="true"></span>
+            <span class="stepper__label">Bevestiging</span>
+          </li>
+        </ol>
+      </div>
+
+      <div class="hero__badge" role="note" aria-label="Korte uitleg">
+        <div class="badge">
+          <div class="badge__icon" aria-hidden="true">i</div>
+          <div class="badge__content">
+            <p class="badge__title">Tip</p>
+            <p class="badge__text">Houd je kenteken, postcode en rijbewijsgegevens bij de hand.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main content area -->
+  <main class="main" role="main">
+    <div class="container grid">
+      <!-- Left: form card -->
+      <section class="card">
+        <header class="card__header">
+          <h2>Stap 1: jouw gegevens</h2>
+          <p class="muted">Velden met <span aria-hidden="true">*</span><span class="sr-only">sterretje</span> zijn verplicht.</p>
+        </header>
+
+        <form class="form" action="#" method="post">
+          <div class="form__row">
+            <div class="field">
+              <label for="license">Kenteken <span aria-hidden="true">*</span></label>
+              <input id="license" name="license" type="text" placeholder="Bijv. 12-AB-34" autocomplete="off" required />
+              <p class="field__hint">Zonder spaties of met streepjes – beide is oké.</p>
+            </div>
+
+            <div class="field">
+              <label for="mileage">Kilometers per jaar</label>
+              <select id="mileage" name="mileage">
+                <option value="5000">0 – 5.000</option>
+                <option value="10000" selected>5.000 – 10.000</option>
+                <option value="15000">10.000 – 15.000</option>
+                <option value="20000">15.000 – 20.000</option>
+                <option value="30000">20.000+</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form__row">
+            <div class="field">
+              <label for="postcode">Postcode <span aria-hidden="true">*</span></label>
+              <input id="postcode" name="postcode" type="text" placeholder="1234 AB" autocomplete="postal-code" required />
+            </div>
+
+            <div class="field field--small">
+              <label for="houseNumber">Huisnr. <span aria-hidden="true">*</span></label>
+              <input id="houseNumber" name="houseNumber" type="text" placeholder="12" inputmode="numeric" required />
+            </div>
+
+            <div class="field field--small">
+              <label for="addition">Toev.</label>
+              <input id="addition" name="addition" type="text" placeholder="A" />
+            </div>
+          </div>
+
+          <div class="form__row">
+            <div class="field">
+              <label for="dob">Geboortedatum <span aria-hidden="true">*</span></label>
+              <input id="dob" name="dob" type="date" required />
+            </div>
+
+            <div class="field">
+              <label for="email">E-mail <span aria-hidden="true">*</span></label>
+              <input id="email" name="email" type="email" placeholder="naam@voorbeeld.nl" autocomplete="email" required />
+            </div>
+          </div>
+
+          <div class="divider" role="separator" aria-hidden="true"></div>
+
+          <div class="form__row">
+            <div class="field field--full">
+              <label class="check">
+                <input type="checkbox" required />
+                <span>Ik ga akkoord met de verwerking van mijn gegevens voor deze aanvraag.</span>
+              </label>
+              <p class="field__hint">
+                Dit is een voorbeeldtekst. Vervang dit door je echte privacy/voorwaarden tekst.
+              </p>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btn btn--ghost">Opslaan</button>
+            <button type="submit" class="btn btn--primary">Verder</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Right: summary / help -->
+      <aside class="sidebar" aria-label="Samenvatting">
+        <section class="card card--sticky">
+          <header class="card__header">
+            <h3>Jouw aanvraag</h3>
+            <p class="muted">Samenvatting (voorbeeld)</p>
+          </header>
+
+          <dl class="summary">
+            <div class="summary__row">
+              <dt>Kenteken</dt>
+              <dd>—</dd>
+            </div>
+            <div class="summary__row">
+              <dt>Postcode</dt>
+              <dd>—</dd>
+            </div>
+            <div class="summary__row">
+              <dt>Kilometers</dt>
+              <dd>5.000–10.000</dd>
+            </div>
+          </dl>
+
+          <div class="callout">
+            <p class="callout__title">Hulp nodig?</p>
+            <p class="callout__text">Bekijk veelgestelde vragen of neem contact op met een adviseur.</p>
+            <a class="btn btn--small btn--ghost" href="#">Veelgestelde vragen</a>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__cols">
+        <div>
+          <p class="footer__title">Service</p>
+          <a class="footer__link" href="#">Contact</a>
+          <a class="footer__link" href="#">Cookieverklaring</a>
+          <a class="footer__link" href="#">Privacy</a>
+        </div>
+        <div>
+          <p class="footer__title">Producten</p>
+          <a class="footer__link" href="#">Autoverzekering</a>
+          <a class="footer__link" href="#">Woonverzekering</a>
+          <a class="footer__link" href="#">Reisverzekering</a>
+        </div>
+        <div>
+          <p class="footer__title">Over</p>
+          <a class="footer__link" href="#">Wie zijn wij</a>
+          <a class="footer__link" href="#">Werken bij</a>
+        </div>
+      </div>
+
+      <p class="footer__fineprint">
+        Voorbeeld UI-template (niet-officieel). Vervang logo/teksten/kleuren met je eigen assets.
+      </p>
+    </div>
+  </footer>
+</body>
+</html>
