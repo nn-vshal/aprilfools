@@ -2,12 +2,14 @@
   "name": "aprilfools",
   "version": "1.0.0",
   "description": "yolo",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "dev": "netlify dev",
-    "build": "echo 'No build step required'",
+    "dev:site": "vite",
+    "build": "vite build",
     "build:functions": "netlify functions:build --functions api/functions --src api/functions",
-    "build:site": "echo 'No build step needed for static site'",
+    "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -23,5 +25,11 @@
   "homepage": "https://github.com/nn-vshal/aprilfools#readme",
   "devDependencies": {
     "netlify-cli": "^24.11.1"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^6.0.1",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "vite": "^8.0.8"
   }
 }

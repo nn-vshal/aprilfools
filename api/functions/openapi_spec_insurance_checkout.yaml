@@ -1,0 +1,620 @@
+openapi: 3.1.0
+info:
+  title: NN Car Insurance Checkout API
+  version: "2026-04-12"
+  description: |
+    REST API for the NN car-insurance checkout flow.
+    The flow is split into sequential steps. This spec covers:
+      Step 1 – Fulfillment options: the customer selects an insurance type (coverage level).
+    Future steps will cover personal details, coverage add-ons, review, and payment.
+servers:
+  - url: https://aprilfools.netlify.app/api
+    description: Production (Netlify)
+  - url: http://localhost:8888/api
+    description: Local development (netlify dev)
+security:
+  - bearerAuth: []
+tags:
+  - name: CheckoutSessions
+    description: Create and manage insurance checkout sessions
+  - name: FulfillmentOptions
+    description: Insurance type (coverage) options available in step 1
+
+# ─────────────────────────────────────────────
+# PATHS
+# ─────────────────────────────────────────────
+paths:
+
+  # ── Step 0: create session ──────────────────
+  /checkout_sessions:
+    post:
+      tags: [CheckoutSessions]
+      summary: Create a checkout session
+      operationId: createCheckoutSession
+      description: |
+        Initialises a new insurance checkout session.
+        Returns the session ID and the list of available fulfillment options
+        (insurance types) that the customer must choose from in step 1.
+      parameters:
+        - $ref: "#/components/parameters/Authorization"
+        - $ref: "#/components/parameters/ContentType"
+        - $ref: "#/components/parameters/IdempotencyKey"
+        - $ref: "#/components/parameters/APIVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutSessionCreateRequest"
+            examples:
+              new_session:
+                summary: Start a new car-insurance checkout
+                value:
+                  product_type: "car_insurance"
+                  locale: "nl-NL"
+      responses:
+        "201":
+          description: Session created — includes step 1 fulfillment options
+          headers:
+            Idempotency-Key:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSession"
+              examples:
+                created:
+                  summary: Session with insurance type options
+                  value:
+                    id: "cs_abc123"
+                    status: "pending"
+                    current_step: 1
+                    product_type: "car_insurance"
+                    locale: "nl-NL"
+                    fulfillment_options:
+                      - $ref: "#/components/examples/FulfillmentOptionWA/value"
+                      - $ref: "#/components/examples/FulfillmentOptionWAPlus/value"
+                      - $ref: "#/components/examples/FulfillmentOptionAllRisk/value"
+                    selected_fulfillment_option: null
+                    created_at: "2026-04-12T09:00:00Z"
+                    updated_at: "2026-04-12T09:00:00Z"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "5XX":
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  # ── Session retrieval & update ───────────────
+  /checkout_sessions/{checkout_session_id}:
+    parameters:
+      - $ref: "#/components/parameters/Authorization"
+      - $ref: "#/components/parameters/APIVersion"
+      - name: checkout_session_id
+        in: path
+        required: true
+        description: Unique identifier for the checkout session
+        schema: { type: string, example: "cs_abc123" }
+
+    get:
+      tags: [CheckoutSessions]
+      summary: Retrieve a checkout session
+      operationId: getCheckoutSession
+      description: Returns the current authoritative state of the checkout session.
+      responses:
+        "200":
+          description: Current session state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSession"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+    post:
+      tags: [CheckoutSessions]
+      summary: Update a checkout session (select fulfillment option)
+      operationId: updateCheckoutSession
+      description: |
+        Updates the session. In step 1 the customer selects their `insurance_type`
+        by submitting a `selected_fulfillment_option`.
+        Returns the updated session and, once step 1 is complete, marks
+        `current_step` as `2` so the next step can begin.
+      parameters:
+        - $ref: "#/components/parameters/ContentType"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutSessionUpdateRequest"
+            examples:
+              select_wa:
+                summary: Customer selects WA (basic third-party liability)
+                value:
+                  selected_fulfillment_option:
+                    insurance_type: "WA"
+              select_wa_plus:
+                summary: Customer selects WA Plus (limited casco)
+                value:
+                  selected_fulfillment_option:
+                    insurance_type: "WA_PLUS"
+              select_all_risk:
+                summary: Customer selects All Risk (fully comprehensive)
+                value:
+                  selected_fulfillment_option:
+                    insurance_type: "ALL_RISK"
+              full_step1:
+                summary: Insurance type + buyer info + car info in one call
+                value:
+                  selected_fulfillment_option:
+                    insurance_type: "WA_PLUS"
+                  buyer_info:
+                    date_of_birth: "15-03-1990"
+                    postal_code: "1234 AB"
+                    house_number: "12A"
+                  car_info:
+                    license_plate: "12-AB-34"
+                    registered_owner: "Jan de Vries"
+                    no_claim_years: 5
+                    has_dashcam: true
+      responses:
+        "200":
+          description: Updated session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSession"
+        "400":
+          description: Bad request (e.g. invalid insurance_type)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "5XX":
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  # ── Cancel ────────────────────────────────────
+  /checkout_sessions/{checkout_session_id}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/Authorization"
+      - $ref: "#/components/parameters/APIVersion"
+      - name: checkout_session_id
+        in: path
+        required: true
+        schema: { type: string, example: "cs_abc123" }
+    post:
+      tags: [CheckoutSessions]
+      summary: Cancel a checkout session
+      operationId: cancelCheckoutSession
+      description: Cancels an in-progress session. Cannot cancel a completed session.
+      responses:
+        "200":
+          description: Cancelled session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSession"
+        "405":
+          description: Session cannot be cancelled (already completed or cancelled)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  # ── Fulfillment options (standalone listing) ──
+  /fulfillment_options:
+    get:
+      tags: [FulfillmentOptions]
+      summary: List available insurance types
+      operationId: listFulfillmentOptions
+      description: |
+        Returns the full catalogue of selectable insurance types (fulfillment options) 
+        for step 1 of checkout, including descriptions and key coverage bullets.
+        Can be called without an active session (e.g. for a product-comparison page).
+      parameters:
+        - $ref: "#/components/parameters/Authorization"
+        - $ref: "#/components/parameters/APIVersion"
+      responses:
+        "200":
+          description: List of insurance type options
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  options:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FulfillmentOption"
+              examples:
+                all_options:
+                  summary: All three insurance types
+                  value:
+                    options:
+                      - id: "opt_wa"
+                        insurance_type: "WA"
+                        name: "WA – Wettelijke Aansprakelijkheid"
+                        description: >
+                          The mandatory minimum coverage required by Dutch law.
+                          Covers damage you cause to other people's vehicles or property.
+                          Does not cover damage to your own car.
+                        suitable_for: "Older vehicles (12+ years) where own-damage cover is not cost-effective."
+                        coverage_highlights:
+                          - "Third-party bodily injury and property damage"
+                          - "24/7 roadside assistance inside and outside the Netherlands"
+                          - "Fire, storm, hail, and collision with an animal"
+                          - "Theft and joyriding"
+                        premium_indication: "From €4.50 / month"
+                      - id: "opt_wa_plus"
+                        insurance_type: "WA_PLUS"
+                        name: "WA Plus – Beperkt Casco"
+                        description: >
+                          Everything in WA, plus limited own-damage cover for a defined 
+                          set of risks such as theft, fire, natural disasters, and glass damage.
+                          Your own car is NOT covered for collision damage you cause yourself.
+                        suitable_for: "Vehicles between 7 and 11 years old."
+                        coverage_highlights:
+                          - "All WA coverage"
+                          - "Glass damage (chips, cracks, and full replacement)"
+                          - "Storm, flood, and hail damage to your own car"
+                          - "Theft and attempted theft"
+                          - "Vandalism"
+                        premium_indication: "From €8.90 / month"
+                      - id: "opt_all_risk"
+                        insurance_type: "ALL_RISK"
+                        name: "WA All Risk – Volledig Casco"
+                        description: >
+                          Our most comprehensive coverage. Includes everything in WA Plus,
+                          and additionally covers damage to your own car regardless of fault —
+                          including single-vehicle accidents, collision damage, and running 
+                          off the road or into water.
+                        suitable_for: "New or nearly-new vehicles (under 7 years old)."
+                        coverage_highlights:
+                          - "All WA Plus coverage"
+                          - "Own-vehicle collision damage, regardless of fault"
+                          - "Running off the road or into water"
+                          - "Damage caused by unknown third parties"
+                          - "Electric vehicle battery coverage available as add-on"
+                        premium_indication: "From €14.20 / month"
+
+# ─────────────────────────────────────────────
+# COMPONENTS
+# ─────────────────────────────────────────────
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API Key
+
+  parameters:
+    Authorization:
+      name: Authorization
+      in: header
+      required: true
+      description: Bearer token for API authentication
+      schema: { type: string, example: "Bearer api_key_123" }
+    ContentType:
+      name: Content-Type
+      in: header
+      required: true
+      description: Must be application/json for requests with a body
+      schema: { type: string, example: "application/json" }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: Unique key to safely retry requests without duplicate effects
+      schema: { type: string, example: "idem_key_xyz" }
+    APIVersion:
+      name: API-Version
+      in: header
+      required: true
+      description: API version date in YYYY-MM-DD format
+      schema: { type: string, example: "2026-04-12" }
+
+  schemas:
+
+    # ── Insurance type enum ─────────────────────
+    InsuranceType:
+      type: string
+      enum:
+        - WA          # Wettelijke Aansprakelijkheid — basic third-party liability
+        - WA_PLUS     # WA Beperkt Casco — limited own-damage
+        - ALL_RISK    # WA Volledig Casco — fully comprehensive
+      description: |
+        Coverage level for the car insurance:
+        - `WA` – Third-party liability only (verplichte minimale dekking).
+        - `WA_PLUS` – Limited casco: WA + fire, theft, glass, weather damage to own car.
+        - `ALL_RISK` – Full casco: WA Plus + all own-vehicle damage regardless of fault.
+
+    # ── Fulfillment option (insurance type) ────
+    FulfillmentOption:
+      type: object
+      additionalProperties: false
+      required: [id, insurance_type, name, description]
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this option
+          example: "opt_wa"
+        insurance_type:
+          $ref: "#/components/schemas/InsuranceType"
+        name:
+          type: string
+          description: Human-readable product name (Dutch)
+          example: "WA – Wettelijke Aansprakelijkheid"
+        description:
+          type: string
+          description: Plain-language explanation of what this coverage level includes
+        suitable_for:
+          type: string
+          description: Guidance on which vehicle age/value this option is best suited to
+        coverage_highlights:
+          type: array
+          items: { type: string }
+          description: Short bullet-list of key coverage points
+        premium_indication:
+          type: string
+          description: Indicative starting price (not a binding quote)
+          example: "From €8.90 / month"
+
+    # ── Selected option (step 1 payload) ───────
+    SelectedFulfillmentOption:
+      type: object
+      additionalProperties: false
+      required: [insurance_type]
+      properties:
+        insurance_type:
+          $ref: "#/components/schemas/InsuranceType"
+
+    # ── Session create request ──────────────────
+    CheckoutSessionCreateRequest:
+      type: object
+      additionalProperties: false
+      required: [product_type]
+      properties:
+        product_type:
+          type: string
+          enum: [car_insurance]
+          description: Product being purchased; currently only car_insurance is supported
+        locale:
+          type: string
+          description: BCP-47 locale for localised content (default nl-NL)
+          example: "nl-NL"
+
+    # ── Buyer personal information ─────────────
+    BuyerInfo:
+      type: object
+      additionalProperties: false
+      description: Personal details of the policyholder (the person taking out the insurance).
+      required: [date_of_birth, postal_code, house_number]
+      properties:
+        date_of_birth:
+          type: string
+          description: Date of birth of the policyholder (DD-MM-YYYY).
+          pattern: '^\d{2}-\d{2}-\d{4}$'
+          example: "15-03-1990"
+        postal_code:
+          type: string
+          description: Dutch postal code where the vehicle is primarily kept (e.g. 1234 AB).
+          pattern: '^[1-9][0-9]{3}\s?[A-Za-z]{2}$'
+          example: "1234 AB"
+        house_number:
+          type: string
+          description: House number, optionally including suffix (e.g. 12, 12A, 12-bis).
+          example: "12A"
+
+    # ── Car / vehicle information ──────────────
+    CarInfo:
+      type: object
+      additionalProperties: false
+      description: Details about the vehicle to be insured.
+      required: [license_plate, registered_owner, no_claim_years]
+      properties:
+        license_plate:
+          type: string
+          description: |
+            Dutch license plate (kenteken). Accepted formats: XX-99-XX, 99-XX-99, etc.
+            Submit without spaces or hyphens for canonicalization (e.g. "12AB34").
+          example: "12-AB-34"
+        registered_owner:
+          type: string
+          description: |
+            Full name of the registered owner (tenaamgestelde) of the vehicle
+            as it appears in the RDW registration. May differ from the policyholder.
+          example: "Jan de Vries"
+        no_claim_years:
+          type: integer
+          minimum: 0
+          maximum: 25
+          description: |
+            Number of consecutive claim-free years (schadevrije jaren) accrued by the
+            policyholder. Used to calculate the bonus-malus discount (up to 80%).
+          example: 5
+        has_dashcam:
+          type: boolean
+          description: |
+            Whether a dashcam is permanently fitted in the vehicle.
+            May qualify the policyholder for a premium discount with certain coverages.
+          example: true
+
+    # ── Session update request (step 1) ────────
+    CheckoutSessionUpdateRequest:
+      type: object
+      additionalProperties: false
+      description: |
+        Payload for updating a session. Supply any combination of
+        `selected_fulfillment_option`, `buyer_info`, and `car_info`
+        in a single call or across multiple calls — all fields are optional
+        and merged into the session state.
+      properties:
+        selected_fulfillment_option:
+          $ref: "#/components/schemas/SelectedFulfillmentOption"
+        buyer_info:
+          $ref: "#/components/schemas/BuyerInfo"
+        car_info:
+          $ref: "#/components/schemas/CarInfo"
+
+    # ── Checkout session (response) ─────────────
+    CheckoutSession:
+      type: object
+      additionalProperties: false
+      required: [id, status, current_step, product_type]
+      properties:
+        id:
+          type: string
+          description: Unique session identifier
+          example: "cs_abc123"
+        status:
+          type: string
+          enum: [pending, step_complete, completed, cancelled]
+          description: |
+            - `pending` – session is active; customer has not finished current step
+            - `step_complete` – current step is done; ready to advance
+            - `completed` – checkout finished successfully
+            - `cancelled` – session was cancelled
+        current_step:
+          type: integer
+          description: |
+            The step the customer is currently on.
+            1 = Select insurance type (this spec)
+            2 = Personal & vehicle details (future)
+            3 = Add-ons & coverage extras (future)
+            4 = Review & confirm (future)
+            5 = Payment (future)
+          example: 1
+        product_type:
+          type: string
+          enum: [car_insurance]
+        locale:
+          type: string
+          example: "nl-NL"
+        fulfillment_options:
+          type: array
+          description: Available insurance types to choose from (returned on session create)
+          items:
+            $ref: "#/components/schemas/FulfillmentOption"
+        selected_fulfillment_option:
+          oneOf:
+            - $ref: "#/components/schemas/SelectedFulfillmentOption"
+            - type: "null"
+          description: The insurance type the customer has chosen, or null if not yet selected
+        buyer_info:
+          oneOf:
+            - $ref: "#/components/schemas/BuyerInfo"
+            - type: "null"
+          description: Policyholder personal details, or null if not yet provided
+        car_info:
+          oneOf:
+            - $ref: "#/components/schemas/CarInfo"
+            - type: "null"
+          description: Vehicle details, or null if not yet provided
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-04-12T09:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-04-12T09:01:30Z"
+
+    # ── Error ───────────────────────────────────
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code
+          example: "invalid_insurance_type"
+        message:
+          type: string
+          description: Human-readable error description
+          example: "The provided insurance_type is not valid. Must be one of: WA, WA_PLUS, ALL_RISK."
+        details:
+          type: object
+          additionalProperties: true
+          description: Optional structured detail about the error
+
+  # ── Reusable examples ──────────────────────
+  examples:
+    FulfillmentOptionWA:
+      summary: WA — Basic third-party liability
+      value:
+        id: "opt_wa"
+        insurance_type: "WA"
+        name: "WA – Wettelijke Aansprakelijkheid"
+        description: >
+          The mandatory minimum coverage required by Dutch law. Covers damage
+          you cause to other people and their property. Does not cover repairs
+          to your own vehicle after a fault accident.
+        suitable_for: "Best for cars older than 12 years where own-damage cover is no longer cost-effective."
+        coverage_highlights:
+          - "Third-party bodily injury and property damage (legally required)"
+          - "24/7 roadside assistance in the Netherlands and abroad"
+          - "Damage caused by fire, storm, hail, or collision with an animal"
+          - "Theft and joyriding of your vehicle"
+        premium_indication: "From €4.50 / month"
+
+    FulfillmentOptionWAPlus:
+      summary: WA Plus — Limited casco
+      value:
+        id: "opt_wa_plus"
+        insurance_type: "WA_PLUS"
+        name: "WA Plus – Beperkt Casco"
+        description: >
+          Everything included in WA, plus limited own-damage cover for a 
+          defined set of risks. Your car is protected against theft, fire, 
+          natural disasters, and glass damage — but collision damage you 
+          cause yourself is not covered.
+        suitable_for: "Best for cars between 7 and 11 years old."
+        coverage_highlights:
+          - "All WA coverage"
+          - "Glass damage: chips, cracks, or full windscreen replacement"
+          - "Storm, hail, and flood damage to your own vehicle"
+          - "Theft and attempted theft"
+          - "Vandalism damage"
+        premium_indication: "From €8.90 / month"
+
+    FulfillmentOptionAllRisk:
+      summary: ALL_RISK — Fully comprehensive
+      value:
+        id: "opt_all_risk"
+        insurance_type: "ALL_RISK"
+        name: "WA All Risk – Volledig Casco"
+        description: >
+          Our most comprehensive car insurance. Includes everything in WA Plus
+          and additionally covers damage to your own vehicle regardless of who
+          is at fault — including single-vehicle accidents, collision with 
+          another car, and running off the road or into water.
+        suitable_for: "Best for new or nearly-new cars (under 7 years old) where protecting your own vehicle is a priority."
+        coverage_highlights:
+          - "All WA Plus coverage"
+          - "Own-vehicle collision damage, regardless of fault"
+          - "Single-vehicle accidents (e.g. hitting a kerb or barrier)"
+          - "Running off the road or into water"
+          - "Damage caused by an unidentified third party"
+          - "Optional: EV battery coverage add-on available"
+        premium_indication: "From €14.20 / month"

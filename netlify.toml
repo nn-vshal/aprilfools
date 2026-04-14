@@ -1,9 +1,12 @@
 [build]
-  publish = "site"
+  publish = "dist"
   functions = "api/functions"
+  command = "npm run build"
 
 [dev]
-  publish = "site"
+  command = "vite"
+  targetPort = 5173
+  publish = "dist"
   functions = "api/functions"
 
 [[redirects]]
