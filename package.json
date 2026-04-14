@@ -27,12 +27,12 @@
     "node": ">=20.19.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^6.0.1",
-    "netlify-cli": "^24.11.1",
-    "vite": "^8.0.8"
+    "netlify-cli": "^24.11.1"
   },
   "dependencies": {
+    "@vitejs/plugin-react": "^6.0.1",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react-dom": "^19.2.5",
+    "vite": "^8.0.8"
   }
 }

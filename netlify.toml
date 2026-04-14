@@ -1,7 +1,7 @@
 [build]
   publish = "dist"
   functions = "api/functions"
-  command = "npm install --include=dev && npx vite build"
+  command = "npm install && npm run build"
 
 [build.environment]
   NODE_ENV = "development"
