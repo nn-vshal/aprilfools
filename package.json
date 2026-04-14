@@ -23,6 +23,9 @@
     "url": "https://github.com/nn-vshal/aprilfools/issues"
   },
   "homepage": "https://github.com/nn-vshal/aprilfools#readme",
+  "engines": {
+    "node": "18.x"
+  },
   "devDependencies": {
     "netlify-cli": "^24.11.1"
   },
